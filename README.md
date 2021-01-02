@@ -1,62 +1,54 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+example-jwt
+Nesse exemplo, mostro como usar jwt(JSON WEB TOKEN) no Laravel de forma que possa ser aplicado à qualquer estrutura de tabela de usuário, por exemplo. Outra coisa que iremos ver é o uso de um Middleware nas API's para aplicarmos uma validação via jwt. Antes disso, só para explicar, JWT é um token auto-contido e baseado no padrão RFC7519 da W3C, formado por um header, um payload e um secret que são encriptados e enviados como uma string.
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+No primeiro passo, iremos instalar a do JWT no nosso projeto Laravel. Para isso, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando:
 
-## About Laravel
+composer require tymon/jwt-auth
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Caso esteja usando uma versão do Laravel 5.4 ou inferior, devemos adicionar um "service provider" no array 'providers' localizado em config/app.php. Segue abaixo o código:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+OBS:"No exemplo que criei, usei a versão 8.20.1 .
 
-## Learning Laravel
+Agora devemos publicar o pacote através do comando:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Agora iremos utilizar o comando para gerar um hash para o JWT, esse hash será criado na constante "JWT_SECRET" do arquivo .env da sua aplicação:
 
-## Laravel Sponsors
+php artisan jwt:secret
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+OBS:"Caso baixe o exemplo, lembre-se de criar o arquivo .env para poder utilizar o comando descrito acima".
 
-### Premium Partners
+Outro detalhe que fiz para que funcionasse, foi editar o arquivo config/jwt.php da chave 'required_claims' => ['iss', 'iat', 'exp', 'nbf', 'jti', 'sub'] eu removi a reinvidicação não utilizada (no meu caso, 'sub'). Importante frisar que no exemplo feito, mesmo que se faça login novamente e utilizar o token anterior, o Widdleware permitirá que acesse o controler, pois a função dele é apenas validar o token, e no caso, o anterior ainda é valido. por padrão o token tem uma validade de 1 hora.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/)**
-- **[OP.GG](https://op.gg)**
+Agora já podemos usar JWT no Laravel, abaixo irei prosseguir mostrando alguns passos de como criei a aplicação e de como usei um Middleware com validação jwt.
 
-## Contributing
+Passo 1 - Apaguei a classe Users e as migrations criadas por default no projeto, pois o intuito é criar tudo do zero.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Passo 2 - Criei o Model Usuarios com o seguinte comando: php artisan make:model Usuarios; utulizei o "SoftDeletes" para exclusão lógica e adicionei alguns campos como id, nome, CPF, email, senha e token.
 
-## Code of Conduct
+Passo 3 - Criei um Migration para gerar a tabela usuarios com o seguinte comando: php artisan make:migration create_usuarios_table --create=usuarios; e lá informei sua chave id como bigIncrements, cpf e email como unique, timestamps e softDeletes com o campo deleted_at. Para mais detalhes, consultar o arquivo 2021_01_01_185744_create_usuarios_table em database/migrations.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Passo 4 - Usei uma biblioteca chamada para validar CPF e CNPJ, para adicionar o projeto, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando: composer require laravellegends/pt-br-validator
 
-## Security Vulnerabilities
+Passo 5 - Criei um controller chamado UtilsController para criar funções que poderiam ser chamadas em lugares diferentes do projeto. Para criar o controller, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando: php artisan make:controller Api/UtilsController
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Passo 6 - No UtilsController criei uma função para validar CPF.
 
-## License
+Passo 7 - Criei um Controller chamado UsuariosController e criei funções para cadastrar e excluir o usuário. Para criar o controller, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando: php artisan make:controller Api/UsuariosController
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Passo 8 - Criei um Controller chamado AuthenticateController para cuidar da parte de autenticação do usuário como login e alterar senha. Para criar o controller, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando: php artisan make:controller Api/AuthenticateController; analisem o código para mais detalhes.
+
+Passo 9 - Criei um Middleware chamado JwtAuthenticate para poder receber e validar o token que foi criado ao fazer o login. Para criar o Middleware, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando: php artisan make:middleware JwtAuthenticate; Após criar o Middleware, devemos adiciona-lo no array "protected $routeMiddleware" no arquivo app/Http/Kernel.php. para isso, escreve o seguinte código: 'JwtAuthenticate' => \App\Http\Middleware\JwtAuthenticate::class,
+
+Passo 10 - No Laravel 8 temos uma diferença para criar as rotas, devemos agora passar o caminho completo do controller, para usar como o de costume "passando apenas o nome do controle" devemos editar o arquivo app/Providers/RouteServiceProvider.php e em "protected $namespace" devemos adicionar o caminho dos controllers "protected $namespace = 'App\Http\Controllers'";
+
+Passo 11 - Criei algumas rotas em routes/api.php e em algumas delas adicionei o Middleware JwtAuthenticate de forma que só terá acesso a essas rotas se o usuário estiver logado.
+
+Passo 12 - Ao testar as rotas que tenham o Middleware, não esqueça de preencher corretamente o cabeçalho da requisição. Exemplo:
+
+Content-Type: application/json
+
+Authorization: bearer eyJ0eXAiOiJKV1QiLC.........(TOKEN)

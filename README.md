@@ -1,4 +1,5 @@
 example-jwt
+
 Nesse exemplo, mostro como usar jwt(JSON WEB TOKEN) no Laravel de forma que possa ser aplicado à qualquer estrutura de tabela de usuário, por exemplo. Outra coisa que iremos ver é o uso de um Middleware nas API's para aplicarmos uma validação via jwt. Antes disso, só para explicar, JWT é um token auto-contido e baseado no padrão RFC7519 da W3C, formado por um header, um payload e um secret que são encriptados e enviados como uma string.
 
 No primeiro passo, iremos instalar a do JWT no nosso projeto Laravel. Para isso, devemos acessar a pasta do projeto pelo cmd / bash e usar o seguinte comando:
